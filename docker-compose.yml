@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      - SA_PASSWORD=${DB_PASSWORD}
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    networks:
+      - mars-network
+
+  # Backend (ASP.NET Core API)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mars_backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - DB_SERVER=${DB_SERVER}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5000:80"
+    depends_on:
+      - sqlserver
+    networks:
+      - mars-network
+
+  # Frontend (React with Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mars_frontend
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - mars-network
+
+networks:
+  mars-network:
+    driver: bridge
